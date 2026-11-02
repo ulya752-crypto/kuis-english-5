@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English 5th Grade Quiz - 4-Floor Tower Fall</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- PeerJS for Real-time Multi-device Networking -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            overflow: hidden;
+        }
+        .btn-bounce:active {
+            transform: scale(0.95);
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(14px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen relative">
+
+    <!-- AUDIO SYNTH (BGM & SFX Generator) -->
+    <script>
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.bgmLooping = false;
+                this.isMuted = false;
+                this.bgmTimer = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                const btn = document.getElementById('mute-btn');
+                if (btn) {
+                    btn.innerHTML = this.isMuted ? 
+                        '<i class="fa-solid fa-volume-xmark text-red-400"></i>' : 
+                        '<i class="fa-solid fa-volume-high text-amber-400"></i>';
+                }
+            }
+
+            playTone(freq, type = 'sine', duration = 0.1, gainVal = 0.1) {
+                if (this.isMuted) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            }
+
+            playCorrect() {
+                this.playTone(523.25, 'triangle', 0.12, 0.2);
+                setTimeout(() => this.playTone(659.25, 'triangle', 0.12, 0.2), 90);
+                setTimeout(() => this.playTone(783.99, 'triangle', 0.25, 0.2), 180);
+            }
+
+            playAscend() {
+                if (this.isMuted) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(250, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(850, this.ctx.currentTime + 0.6);
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.6);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(); osc.stop(this.ctx.currentTime + 0.6);
+                } catch(e){}
+            }
+
+            playFall() {
+                if (this.isMuted) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(500, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.7);
+                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.7);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(); osc.stop(this.ctx.currentTime + 0.7);
+                } catch(e){}
+            }
+
+            // Upbeat Stumble Guys / Funk style BGM Loop
+            startBGM() {
+                if (this.bgmLooping) return;
+                this.init();
+                this.bgmLooping = true;
+
+                const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 293.66, 349.23, 440.00, 587.33, 440.00, 349.23];
+                let step = 0;
+
+                this.bgmTimer = setInterval(() => {
+                    if (!this.isMuted && this.ctx) {
+                        const freq = notes[step % notes.length];
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = (step % 4 === 0) ? 'square' : 'triangle';
+                        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start();
+                        osc.stop(this.ctx.currentTime + 0.15);
+                    }
+                    step++;
+                }, 180);
+            }
+        }
+        const sound = new SoundEngine();
+    </script>
+
+    <!-- GLOBAL MUTE BUTTON TOP-RIGHT -->
+    <button id="mute-btn" onclick="sound.toggleMute()" class="fixed top-4 right-4 z-50 bg-slate-900/80 hover:bg-slate-800 p-3 rounded-2xl border border-slate-700 text-amber-400 shadow-xl">
+        <i class="fa-solid fa-volume-high text-xl"></i>
+    </button>
+
+    <!-- 1. LANDING / ROLE SELECTION -->
+    <div id="screen-welcome" class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 z-50 p-4">
+        <div class="glass-panel p-8 rounded-3xl max-w-md w-full text-center shadow-2xl">
+            <div class="inline-block p-4 bg-amber-400 rounded-3xl mb-4 shadow-lg animate-bounce text-slate-900">
+                <i class="fa-solid fa-layer-group text-5xl"></i>
+            </div>
+            <h1 class="text-3xl font-black text-amber-300 mb-1">TOWER FALL QUIZ</h1>
+            <p class="text-slate-300 text-sm font-semibold mb-6">5th Grade English: Clothes & Seasons</p>
+
+            <div class="space-y-4">
+                <button onclick="showStudentLogin()" class="btn-bounce w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg py-4 rounded-2xl shadow-lg border-b-4 border-emerald-700 transition flex items-center justify-center">
+                    <i class="fa-solid fa-mobile-screen mr-2 text-xl"></i> Join as Student (Murid HP)
+                </button>
+                <button onclick="startTeacherHost()" class="btn-bounce w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-lg py-4 rounded-2xl shadow-lg border-b-4 border-indigo-700 transition flex items-center justify-center">
+                    <i class="fa-solid fa-display mr-2 text-xl"></i> Host as Teacher (Layar Kelas)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. STUDENT LOGIN -->
+    <div id="screen-student-login" class="hidden absolute inset-0 flex items-center justify-center bg-gradient-to-br from-teal-950 to-slate-950 z-50 p-4">
+        <div class="glass-panel p-8 rounded-3xl max-w-md w-full shadow-2xl">
+            <button onclick="showWelcome()" class="text-slate-400 hover:text-white mb-4 font-bold text-sm">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Kembali
+            </button>
+            <h2 class="text-2xl font-bold text-amber-300 mb-2 text-center">Masuk Game Murid</h2>
+            <p class="text-xs text-slate-400 text-center mb-6">Masukkan Kode Kamar yang ada di papan proyektor Guru</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Nama Kamu</label>
+                    <input type="text" id="input-student-name" placeholder="Contoh: Budi" class="w-full px-4 py-3 rounded-xl bg-slate-800 border-2 border-slate-700 text-white focus:border-amber-400 focus:outline-none font-bold text-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Kode Kamar (Room Code)</label>
+                    <input type="text" id="input-room-code" placeholder="Misal: 4821" maxlength="6" class="w-full px-4 py-3 rounded-xl bg-slate-800 border-2 border-slate-700 text-amber-300 focus:border-amber-400 focus:outline-none font-bold text-xl uppercase tracking-widest text-center">
+                </div>
+                <button onclick="joinGameAsStudent()" class="btn-bounce w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xl py-4 rounded-2xl shadow-lg border-b-4 border-amber-600 transition mt-2">
+                    Masuk & Main! <i class="fa-solid fa-play ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. TEACHER DASHBOARD DISPLAY -->
+    <div id="screen-teacher" class="hidden absolute inset-0 bg-slate-950 z-50 flex flex-col p-6 text-white overflow-y-auto">
+        <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-4 mb-6">
+            <div>
+                <h2 class="text-2xl font-black text-amber-400 flex items-center">
+                    <i class="fa-solid fa-chalkboard-user mr-3"></i> Layar Kelas - Teacher Host
+                </h2>
+                <p class="text-slate-400 text-sm">Minta murid buka web ini dari HP & masukkan KODE KAMAR di bawah</p>
+            </div>
+            <div class="flex items-center space-x-4 bg-amber-500/10 px-6 py-3 rounded-2xl border-2 border-amber-400/50 shadow">
+                <span class="text-slate-300 font-bold text-sm">KODE KAMAR HP:</span>
+                <span id="teacher-room-code" class="text-4xl font-black text-amber-300 tracking-widest">CONNECTING...</span>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="teacherStartQuizTimer()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-5 py-2.5 rounded-xl font-black text-sm shadow">
+                    <i class="fa-solid fa-play mr-1"></i> Mulai / Lanjut Soal
+                </button>
+                <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl font-bold text-sm">
+                    Reset Game
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+            <!-- Question Box Preview for Class -->
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col justify-between shadow">
+                <div>
+                    <span id="teacher-q-num" class="text-xs font-black bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full uppercase tracking-wider">Soal 1 / 20</span>
+                    <h3 id="teacher-q-text" class="text-xl font-bold text-slate-100 mt-4 mb-6">Loading question...</h3>
+                    <div id="teacher-options" class="space-y-3 text-sm font-semibold"></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 text-center">
+                    <p class="text-xs text-slate-400">Kunci Jawaban: <span id="teacher-correct-key" class="font-bold text-emerald-400">C</span></p>
+                </div>
+            </div>
+
+            <!-- Live Real-time Leaderboard (Empty at start) -->
+            <div class="md:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-slate-200 flex items-center">
+                        <i class="fa-solid fa-users text-amber-400 mr-2"></i> Murid Terhubung (<span id="connected-count">0</span>)
+                    </h3>
+                    <span class="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full font-bold">Real-time Peer Server</span>
+                </div>
+
+                <div class="overflow-y-auto flex-1">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-400 text-xs uppercase border-b border-slate-800">
+                                <th class="pb-3">Peringkat</th>
+                                <th class="pb-3">Nama Murid</th>
+                                <th class="pb-3">Lantai Menara</th>
+                                <th class="pb-3">Total XP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-leaderboard-body" class="divide-y divide-slate-800">
+                            <tr>
+                                <td colspan="4" class="py-8 text-center text-slate-500 font-medium">
+                                    Belum ada murid yang masuk. Minta murid memasukkan kode di HP mereka.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. THREE.JS 3D CANVAS -->
+    <div id="game-container" class="w-full h-full relative"></div>
+
+    <!-- 5. HUD OVERLAY (STUDENT GAME POV) -->
+    <div id="game-hud" class="hidden absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-40">
+        <!-- Top Stats & Question Bar -->
+        <div class="w-full max-w-3xl mx-auto flex flex-col items-center pointer-events-auto space-y-2">
+            <!-- Top Status Bar -->
+            <div class="w-full flex justify-between items-center bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-2xl text-white border border-slate-700 shadow-lg">
+                <div class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-full bg-amber-400 flex items-center justify-center text-slate-950 font-bold">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <span id="hud-player-name" class="font-bold text-sm">Murid</span>
+                </div>
+
+                <!-- Current Floor Indicator Badge -->
+                <div id="hud-floor-badge" class="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-1.5 rounded-xl text-xs font-black text-amber-300 border border-purple-400/30 flex items-center shadow">
+                    <i class="fa-solid fa-building mr-1.5 text-amber-400"></i>
+                    <span id="hud-floor-text">LANTAI 1</span>
+                </div>
+
+                <div class="flex items-center space-x-1 text-amber-400 font-black">
+                    <i class="fa-solid fa-star"></i>
+                    <span id="hud-score">0 XP</span>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="w-full bg-slate-900/95 backdrop-blur-lg p-4 rounded-3xl border-2 border-indigo-500/50 text-white shadow-2xl">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div id="hud-q-progress" class="text-xs font-bold bg-indigo-600/80 px-2.5 py-1 rounded-xl text-indigo-100 whitespace-nowrap">
+                        1 / 20
+                    </div>
+                    <div id="timer-badge" class="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center font-black text-xl text-slate-950 shadow shrink-0">
+                        15
+                    </div>
+                    <h2 id="question-text" class="text-sm sm:text-base font-bold text-amber-100 leading-tight flex-1">
+                        Loading question...
+                    </h2>
+                </div>
+
+                <!-- 4 Options Grid -->
+                <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+                    <div id="opt-A" class="bg-red-500/90 p-2.5 rounded-xl border border-red-300/40 flex items-center shadow">
+                        <span class="w-6 h-6 rounded-lg bg-white/20 text-white font-bold flex items-center justify-center mr-2 text-xs">A</span>
+                        <span class="opt-label truncate">...</span>
+                    </div>
+                    <div id="opt-B" class="bg-blue-500/90 p-2.5 rounded-xl border border-blue-300/40 flex items-center shadow">
+                        <span class="w-6 h-6 rounded-lg bg-white/20 text-white font-bold flex items-center justify-center mr-2 text-xs">B</span>
+                        <span class="opt-label truncate">...</span>
+                    </div>
+                    <div id="opt-C" class="bg-emerald-500/90 p-2.5 rounded-xl border border-emerald-300/40 flex items-center shadow">
+                        <span class="w-6 h-6 rounded-lg bg-white/20 text-white font-bold flex items-center justify-center mr-2 text-xs">C</span>
+                        <span class="opt-label truncate">...</span>
+                    </div>
+                    <div id="opt-D" class="bg-amber-500/90 p-2.5 rounded-xl border border-amber-300/40 flex items-center shadow">
+                        <span class="w-6 h-6 rounded-lg bg-white/20 text-white font-bold flex items-center justify-center mr-2 text-xs">D</span>
+                        <span class="opt-label truncate">...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner Alert & Explanation -->
+        <div class="pointer-events-auto flex flex-col items-center justify-center space-y-2">
+            <div id="collapse-alert" class="hidden transform transition duration-300 text-3xl sm:text-4xl font-black italic px-8 py-3 rounded-full shadow-2xl border-4 animate-pulse">
+                RUNTUH! 💥
+            </div>
+
+            <div id="explanation-card" class="hidden max-w-md w-full bg-slate-900/95 border-2 border-emerald-400 p-4 rounded-2xl text-white shadow-2xl text-center">
+                <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
+                    <i class="fa-solid fa-circle-check mr-1"></i> Jawaban Benar: <span id="correct-choice-letter">C</span>
+                </div>
+                <p id="explanation-text" class="text-xs sm:text-sm text-slate-200 mb-3 font-medium">
+                    Penjelasan...
+                </p>
+                <button onclick="nextQuestion()" class="btn-bounce bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm border-b-4 border-emerald-700 shadow">
+                    Soal Berikutnya <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Touch Controls (D-Pad & Jump) -->
+        <div class="w-full flex justify-between items-end pointer-events-auto pb-2">
+            <div class="grid grid-cols-3 gap-1 w-36 h-36 bg-slate-900/60 backdrop-blur-md p-2 rounded-3xl border border-white/20">
+                <div></div>
+                <button onmousedown="movePlayer(0, -1)" onmouseup="stopPlayer()" ontouchstart="movePlayer(0, -1)" ontouchend="stopPlayer()" class="bg-white/20 active:bg-amber-400 text-white rounded-xl flex items-center justify-center font-bold text-xl">▲</button>
+                <div></div>
+                <button onmousedown="movePlayer(-1, 0)" onmouseup="stopPlayer()" ontouchstart="movePlayer(-1, 0)" ontouchend="stopPlayer()" class="bg-white/20 active:bg-amber-400 text-white rounded-xl flex items-center justify-center font-bold text-xl">◀</button>
+                <div class="flex items-center justify-center text-[10px] text-white/50 font-bold">MOVE</div>
+                <button onmousedown="movePlayer(1, 0)" onmouseup="stopPlayer()" ontouchstart="movePlayer(1, 0)" ontouchend="stopPlayer()" class="bg-white/20 active:bg-amber-400 text-white rounded-xl flex items-center justify-center font-bold text-xl">▶</button>
+                <div></div>
+                <button onmousedown="movePlayer(0, 1)" onmouseup="stopPlayer()" ontouchstart="movePlayer(0, 1)" ontouchend="stopPlayer()" class="bg-white/20 active:bg-amber-400 text-white rounded-xl flex items-center justify-center font-bold text-xl">▼</button>
+                <div></div>
+            </div>
+
+            <button onclick="playerJump()" class="btn-bounce w-24 h-24 bg-gradient-to-tr from-amber-400 to-yellow-300 text-slate-950 rounded-full font-black text-base border-4 border-white shadow-2xl flex flex-col items-center justify-center">
+                <i class="fa-solid fa-angles-up text-2xl"></i>
+                <span class="text-[10px] uppercase">LOMPAT</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 6. PODIUM / WINNER SCREEN -->
+    <div id="screen-podium" class="hidden absolute inset-0 bg-slate-950 z-50 flex flex-col items-center justify-between p-6">
+        <div class="text-center mt-4">
+            <h1 class="text-3xl sm:text-4xl font-black text-amber-400 tracking-wide uppercase mb-1">🎉 GAME COMPLETED! 🎉</h1>
+            <p class="text-slate-400 font-medium text-sm">Juara Menara Kuis Bahasa Inggris!</p>
+        </div>
+
+        <div class="w-full max-w-xl h-64 relative flex items-end justify-center space-x-4 mb-4">
+            <!-- 2nd Place -->
+            <div class="w-28 flex flex-col items-center">
+                <div class="text-white font-bold text-xs mb-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                    <span id="podium-2-name">-</span>
+                </div>
+                <div class="w-full bg-slate-400 h-36 rounded-t-2xl flex items-center justify-center font-black text-3xl text-slate-900 shadow-2xl border-t-4 border-slate-200">
+                    2
+                </div>
+            </div>
+
+            <!-- 1st Place -->
+            <div class="w-32 flex flex-col items-center">
+                <i class="fa-solid fa-crown text-amber-400 text-4xl mb-1 animate-bounce"></i>
+                <div class="text-amber-300 font-bold text-sm mb-2 bg-amber-950 px-4 py-1 rounded-full border border-amber-500">
+                    <span id="podium-1-name">-</span>
+                </div>
+                <div class="w-full bg-gradient-to-t from-amber-500 to-yellow-300 h-48 rounded-t-2xl flex items-center justify-center font-black text-5xl text-slate-950 shadow-2xl border-t-4 border-white">
+                    1
+                </div>
+            </div>
+
+            <!-- 3rd Place -->
+            <div class="w-28 flex flex-col items-center">
+                <div class="text-white font-bold text-xs mb-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                    <span id="podium-3-name">-</span>
+                </div>
+                <div class="w-full bg-amber-700 h-28 rounded-t-2xl flex items-center justify-center font-black text-3xl text-amber-200 shadow-2xl border-t-4 border-amber-500">
+                    3
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
+            <h3 class="text-slate-400 text-xs uppercase font-bold mb-2">Hasil Akhir Kamu</h3>
+            <div class="flex justify-around items-center">
+                <div>
+                    <p class="text-xs text-slate-500">Total Skor XP</p>
+                    <p id="podium-my-score" class="text-2xl font-black text-emerald-400">0 XP</p>
+                </div>
+                <div class="border-r border-slate-800 h-8"></div>
+                <div>
+                    <p class="text-xs text-slate-500">Lantai Akhir</p>
+                    <p id="podium-my-floor" class="text-2xl font-black text-amber-400">Lantai 1</p>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="location.reload()" class="btn-bounce bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold px-8 py-3 rounded-2xl text-lg shadow-xl border-b-4 border-amber-600 mb-4">
+            Main Lagi <i class="fa-solid fa-rotate-right ml-2"></i>
+        </button>
+    </div>
+
+    <!-- MAIN GAME SCRIPT -->
+    <script>
+        // --- 20 QUESTIONS DATA ---
+        const quizQuestions = [
+            {
+                q: "To keep your feet dry and clean when stepping on muddy puddles, you wear ...",
+                options: { A: "sandals", B: "slippers", C: "rainboots", D: "high heels" },
+                correct: "C",
+                exp: "Rainboots (sepatu boot hujan) melindungi kaki dari air dan lumpur saat hujan."
+            },
+            {
+                q: "My brother wears a thick ... over his shirt because it is raining and cold.",
+                options: { A: "singlet", B: "jacket", C: "swimsuit", D: "shorts" },
+                correct: "B",
+                exp: "Jacket (jaket) tebal membantu menghangatkan tubuh saat cuaca dingin."
+            },
+            {
+                q: "To protect your eyes from strong sunlight in summer, you can wear ...",
+                options: { A: "goggles", B: "reading glasses", C: "sunglasses", D: "magnifying glasses" },
+                correct: "C",
+                exp: "Sunglasses (kacamata hitam) melindungimu dari terik sinar matahari."
+            },
+            {
+                q: "When going swimming at the beach on a hot day, boys usually wear ...",
+                options: { A: "swimming trunks", B: "raincoats", C: "sweaters", D: "trousers" },
+                correct: "A",
+                exp: "Swimming trunks (celana renang) cocok dipakai saat berenang di pantai."
+            },
+            {
+                q: "It is snowing outside! Don't forget to wear warm ... on your hands.",
+                options: { A: "socks", B: "gloves", C: "belts", D: "rings" },
+                correct: "B",
+                exp: "Gloves (sarung tangan) menghangatkan tangan kita saat musim dingin."
+            },
+            {
+                q: "She wears a soft knitted ... around her neck in the cold winter.",
+                options: { A: "scarf", B: "tie", C: "ribbon", D: "necklace" },
+                correct: "A",
+                exp: "Scarf (syal) dilingkarkan di leher agar tetap hangat."
+            },
+            {
+                q: "On a windy autumn day, grandfather wears a warm ... on his head.",
+                options: { A: "beanie", B: "crown", C: "helmet", D: "cap" },
+                correct: "A",
+                exp: "Beanie (topi kupluk) terbuat dari wol dan hangat untuk udara dingin."
+            },
+            {
+                q: "It is heavy rain outside! Put on your ... so you don't get wet on your way to school.",
+                options: { A: "t-shirt", B: "raincoat", C: "pyjamas", D: "vest" },
+                correct: "B",
+                exp: "Raincoat (jas hujan) mencegah baju sekolah kita basah."
+            },
+            {
+                q: "In sunny summer weather, children like to wear light ... and t-shirts.",
+                options: { A: "heavy coats", B: "shorts", C: "woolen pants", D: "sweaters" },
+                correct: "B",
+                exp: "Shorts (celana pendek) adem dan nyaman digunakan di musim panas."
+            },
+            {
+                q: "Before putting on your shoes, you must put on your ... first.",
+                options: { A: "gloves", B: "socks", C: "scarf", D: "belt" },
+                correct: "B",
+                exp: "Socks (kaos kaki) dipakai sebelum mengenakan sepatu."
+            },
+            {
+                q: "What do girls usually wear for a birthday party in spring?",
+                options: { A: "dress", B: "raincoat", C: "swimsuit", D: "pajamas" },
+                correct: "A",
+                exp: "Dress (gaun) anggun sangat cocok untuk pesta di musim semi."
+            },
+            {
+                q: "My father wears a neat ... and a tie to his office every day.",
+                options: { A: "t-shirt", B: "shirt", C: "singlet", D: "sweater" },
+                correct: "B",
+                exp: "Shirt (kemeja) adalah pakaian rapi untuk bekerja di kantor."
+            },
+            {
+                q: "When going to sleep at night, we wear comfortable ...",
+                options: { A: "uniform", B: "pajamas", C: "jacket", D: "raincoat" },
+                correct: "B",
+                exp: "Pajamas (baju tidur) dipakai saat hendak tidur di malam hari."
+            },
+            {
+                q: "Students wear their school ... from Monday to Friday.",
+                options: { A: "costume", B: "uniform", C: "swimwear", D: "cardigan" },
+                correct: "B",
+                exp: "School uniform (seragam sekolah) dipakai murid saat sekolah."
+            },
+            {
+                q: "To keep your trousers from falling down, you should wear a ...",
+                options: { A: "belt", B: "tie", C: "scarf", D: "ribbon" },
+                correct: "A",
+                exp: "Belt (sabuk/ikat pinggang) mengencangkan celana."
+            },
+            {
+                q: "During a hot sunny day at the park, a broad ... protects your face from sunlight.",
+                options: { A: "sunhat", B: "helmet", C: "winter cap", D: "mask" },
+                correct: "A",
+                exp: "Sunhat (topi pelindung matahari) melindungi kepala & wajah."
+            },
+            {
+                q: "When playing sports or running, it is best to wear comfortable ...",
+                options: { A: "leather shoes", B: "sneakers", C: "high heels", D: "slippers" },
+                correct: "B",
+                exp: "Sneakers (sepatu olahraga) empuk dan nyaman untuk berolahraga."
+            },
+            {
+                q: "In winter, people wear long thick ... to keep their legs warm.",
+                options: { A: "shorts", B: "trousers", C: "skirt", D: "miniskirt" },
+                correct: "B",
+                exp: "Trousers (celana panjang) menjaga kaki hangat di udara dingin."
+            },
+            {
+                q: "A knitted long-sleeved top that keeps you warm in cool weather is a ...",
+                options: { A: "sweater", B: "singlet", C: "bikini", D: "vest" },
+                correct: "A",
+                exp: "Sweater (baju hangat wol) membuat badan tetap hangat."
+            },
+            {
+                q: "When walking inside the house, we can wear soft ... on our feet.",
+                options: { A: "boots", B: "slippers", C: "high heels", D: "cleats" },
+                correct: "B",
+                exp: "Slippers (sandal rumah) dipakai di dalam ruangan."
+            }
+        ];
+
+        // --- GAME SYSTEM VARS ---
+        let playerName = "Murid";
+        let roomCode = "";
+        let isTeacher = false;
+        let peer = null;
+        let peerConns = [];
+
+        let currentQuestionIdx = 0;
+        let score = 0;
+        let currentFloor = 1;
+        const FLOOR_HEIGHTS = { 1: 0, 2: 12, 3: 24, 4: 36 };
+
+        let timerSeconds = 15;
+        let timerInterval = null;
+        let isAnswerPhase = true;
+
+        // NO DEFAULT BOT PLAYERS -> EMPTY LIST
+        let connectedStudentsMap = {}; // { id: { name, score, currentFloor, x, z } }
+
+        // THREE.JS VARS
+        let scene, camera, renderer;
+        let towerFloors = {};
+        let playerMesh, playerLimbs = {};
+        let otherStudentMeshes = {}; // Render meshes of other real students on teacher/student screen
+        let playerPos = { x: 0, y: 1, z: 0 };
+        let playerVelocityY = 0;
+        let isJumping = false;
+        let moveDirection = { x: 0, z: 0 };
+
+        const TILE_COLORS = {
+            A: 0xEF4444,
+            B: 0x3B82F6,
+            C: 0x10B981,
+            D: 0xF59E0B
+        };
+
+        // --- UI NAVIGATION ---
+        function showStudentLogin() {
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-student-login').classList.remove('hidden');
+        }
+
+        function showWelcome() {
+            document.getElementById('screen-student-login').classList.add('hidden');
+            document.getElementById('screen-welcome').classList.remove('hidden');
+        }
+
+        // --- PEERJS NETWORKING ---
+        function startTeacherHost() {
+            isTeacher = true;
+            sound.startBGM();
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-teacher').classList.remove('hidden');
+
+            // Generate 4-digit numeric Room Code
+            roomCode = Math.floor(1000 + Math.random() * 9000).toString();
+            document.getElementById('teacher-room-code').innerText = roomCode;
+
+            // Initialize Peer Server Host
+            peer = new Peer('TFQUIZ-' + roomCode);
+
+            peer.on('open', (id) => {
+                console.log('Teacher Host Room created with ID:', id);
+            });
+
+            peer.on('connection', (conn) => {
+                peerConns.push(conn);
+
+                conn.on('data', (data) => {
+                    handleStudentData(conn.peer, data);
+                });
+
+                conn.on('close', () => {
+                    delete connectedStudentsMap[conn.peer];
+                    updateTeacherLeaderboard();
+                });
+            });
+
+            updateTeacherUI();
+        }
+
+        function handleStudentData(peerId, data) {
+            if (data.type === 'JOIN') {
+                connectedStudentsMap[peerId] = {
+                    name: data.name,
+                    score: 0,
+                    currentFloor: 1,
+                    x: 0, z: 0
+                };
+            } else if (data.type === 'UPDATE_POS') {
+                if (connectedStudentsMap[peerId]) {
+                    connectedStudentsMap[peerId].x = data.x;
+                    connectedStudentsMap[peerId].z = data.z;
+                }
+            } else if (data.type === 'UPDATE_RESULT') {
+                if (connectedStudentsMap[peerId]) {
+                    connectedStudentsMap[peerId].score = data.score;
+                    connectedStudentsMap[peerId].currentFloor = data.currentFloor;
+                }
+            }
+            updateTeacherLeaderboard();
+        }
+
+        function joinGameAsStudent() {
+            const nameInput = document.getElementById('input-student-name').value.trim();
+            const codeInput = document.getElementById('input-room-code').value.trim();
+
+            if (!nameInput) { alert("Masukkan nama kamu!"); return; }
+            if (!codeInput) { alert("Masukkan Kode Kamar!"); return; }
+
+            playerName = nameInput;
+            roomCode = codeInput;
+
+            sound.startBGM();
+            document.getElementById('hud-player-name').innerText = playerName;
+            document.getElementById('screen-student-login').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('hidden');
+
+            // Connect to PeerJS Host
+            peer = new Peer();
+            peer.on('open', () => {
+                const conn = peer.connect('TFQUIZ-' + roomCode);
+                conn.on('open', () => {
+                    conn.send({ type: 'JOIN', name: playerName });
+                    setInterval(() => {
+                        conn.send({
+                            type: 'UPDATE_POS',
+                            x: playerPos.x,
+                            z: playerPos.z
+                        });
+                        conn.send({
+                            type: 'UPDATE_RESULT',
+                            score: score,
+                            currentFloor: currentFloor
+                        });
+                    }, 500);
+                });
+            });
+
+            init3DScene();
+            loadQuestion(currentQuestionIdx);
+        }
+
+        // --- THREE.JS BUILD SCENE ---
+        function init3DScene() {
+            const container = document.getElementById('game-container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.008);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            dirLight.position.set(20, 50, 20);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Create 4-Floor Tower Levels
+            for (let f = 1; f <= 4; f++) {
+                createTowerFloorLevel(f, FLOOR_HEIGHTS[f]);
+            }
+
+            // Detailed Student Character
+            playerMesh = createDetailedCharacter(0x3B82F6, true, playerName);
+            playerMesh.position.set(0, FLOOR_HEIGHTS[1] + 1, 0);
+            scene.add(playerMesh);
+
+            window.addEventListener('resize', onWindowResize);
+            animate3D();
+        }
+
+        function createTowerFloorLevel(floorNum, baseHeight) {
+            towerFloors[floorNum] = {};
+            const tileSize = 10;
+            const tileHeight = 1;
+            const positions = {
+                A: { x: -tileSize/2 - 0.2, z: -tileSize/2 - 0.2 },
+                B: { x:  tileSize/2 + 0.2, z: -tileSize/2 - 0.2 },
+                C: { x: -tileSize/2 - 0.2, z:  tileSize/2 + 0.2 },
+                D: { x:  tileSize/2 + 0.2, z:  tileSize/2 + 0.2 }
+            };
+
+            const floorGroup = new THREE.Group();
+
+            Object.keys(positions).forEach(key => {
+                const group = new THREE.Group();
+                const geo = new THREE.BoxGeometry(tileSize, tileHeight, tileSize);
+                const mat = new THREE.MeshStandardMaterial({ 
+                    color: TILE_COLORS[key], roughness: 0.3, metalness: 0.1 
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.receiveShadow = true;
+                group.add(mesh);
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 256; canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.fillRect(0,0,256,256);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'Bold 140px Fredoka, sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(key, 128, 128);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const labelGeo = new THREE.PlaneGeometry(7.5, 7.5);
+                const labelMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+                const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+                labelMesh.rotation.x = -Math.PI / 2;
+                labelMesh.position.y = tileHeight / 2 + 0.02;
+                group.add(labelMesh);
+
+                group.position.set(positions[key].x, baseHeight, positions[key].z);
+                floorGroup.add(group);
+                towerFloors[floorNum][key] = group;
+            });
+
+            scene.add(floorGroup);
+        }
+
+        // DETAILED ROBOLOX / STUMBLE GUYS HUMANOID CHARACTER BUILDER
+        function createDetailedCharacter(shirtColor, isMainPlayer, charName = "Murid") {
+            const charGroup = new THREE.Group();
+
+            // Torso
+            const bodyGeo = new THREE.BoxGeometry(1.2, 1.4, 0.8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.4 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.1;
+            charGroup.add(body);
+
+            // Head & Face
+            const headGeo = new THREE.BoxGeometry(1, 1, 0.95);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xFFD1B3 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.3;
+            charGroup.add(head);
+
+            // Eyes
+            const eyeGeo = new THREE.BoxGeometry(0.15, 0.2, 0.05);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1E293B });
+            const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+            eyeL.position.set(-0.25, 2.35, 0.48);
+            charGroup.add(eyeL);
+            const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+            eyeR.position.set(0.25, 2.35, 0.48);
+            charGroup.add(eyeR);
+
+            // Hair
+            const hairGeo = new THREE.BoxGeometry(1.08, 0.3, 1.05);
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+            const hair = new THREE.Mesh(hairGeo, hairMat);
+            hair.position.y = 2.8;
+            charGroup.add(hair);
+
+            // Arms & Hands
+            const armGeo = new THREE.BoxGeometry(0.35, 1.1, 0.35);
+            const armMat = new THREE.MeshStandardMaterial({ color: shirtColor });
+            const handGeo = new THREE.SphereGeometry(0.2, 8, 8);
+            const handMat = new THREE.MeshStandardMaterial({ color: 0xFFD1B3 });
+
+            const armLGroup = new THREE.Group();
+            armLGroup.position.set(-0.8, 1.6, 0);
+            const armL = new THREE.Mesh(armGeo, armMat);
+            armL.position.y = -0.4;
+            armLGroup.add(armL);
+            const handL = new THREE.Mesh(handGeo, handMat);
+            handL.position.y = -0.9;
+            armLGroup.add(handL);
+            charGroup.add(armLGroup);
+
+            const armRGroup = new THREE.Group();
+            armRGroup.position.set(0.8, 1.6, 0);
+            const armR = new THREE.Mesh(armGeo, armMat);
+            armR.position.y = -0.4;
+            armRGroup.add(armR);
+            const handR = new THREE.Mesh(handGeo, handMat);
+            handR.position.y = -0.9;
+            armRGroup.add(handR);
+            charGroup.add(armRGroup);
+
+            // Legs & Shoes
+            const legGeo = new THREE.BoxGeometry(0.4, 1.0, 0.4);
+            const legMat = new THREE.MeshStandardMaterial({ color: 0x1E293B });
+            const shoeGeo = new THREE.BoxGeometry(0.42, 0.3, 0.6);
+            const shoeMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+
+            const legLGroup = new THREE.Group();
+            legLGroup.position.set(-0.35, 0.9, 0);
+            const legL = new THREE.Mesh(legGeo, legMat);
+            legL.position.y = -0.4;
+            legLGroup.add(legL);
+            const shoeL = new THREE.Mesh(shoeGeo, shoeMat);
+            shoeL.position.set(0, -0.8, 0.1);
+            legLGroup.add(shoeL);
+            charGroup.add(legLGroup);
+
+            const legRGroup = new THREE.Group();
+            legRGroup.position.set(0.35, 0.9, 0);
+            const legR = new THREE.Mesh(legGeo, legMat);
+            legR.position.y = -0.4;
+            legRGroup.add(legR);
+            const shoeR = new THREE.Mesh(shoeGeo, shoeMat);
+            shoeR.position.set(0, -0.8, 0.1);
+            legRGroup.add(shoeR);
+            charGroup.add(legRGroup);
+
+            // Name Tag Badge
+            const nameCanvas = document.createElement('canvas');
+            nameCanvas.width = 256; nameCanvas.height = 64;
+            const nCtx = nameCanvas.getContext('2d');
+            nCtx.fillStyle = isMainPlayer ? '#F59E0B' : '#FFFFFF';
+            nCtx.font = 'Bold 32px sans-serif';
+            nCtx.textAlign = 'center';
+            nCtx.fillText(charName, 128, 40);
+
+            const nTex = new THREE.CanvasTexture(nameCanvas);
+            const tagGeo = new THREE.PlaneGeometry(2.5, 0.65);
+            const tagMat = new THREE.MeshBasicMaterial({ map: nTex, transparent: true });
+            const tagMesh = new THREE.Mesh(tagGeo, tagMat);
+            tagMesh.position.y = 3.4;
+            charGroup.add(tagMesh);
+
+            if (isMainPlayer) {
+                playerLimbs = { armLGroup, armRGroup, legLGroup, legRGroup };
+            }
+
+            return charGroup;
+        }
+
+        // --- CONTROLS ---
+        function movePlayer(dx, dz) { moveDirection.x = dx; moveDirection.z = dz; }
+        function stopPlayer() { moveDirection.x = 0; moveDirection.z = 0; }
+
+        function playerJump() {
+            if (!isJumping && isAnswerPhase) {
+                playerVelocityY = 0.28;
+                isJumping = true;
+                sound.playTone(350, 'sine', 0.1);
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w') moveDirection.z = -1;
+            if (e.key === 'ArrowDown' || e.key === 's') moveDirection.z = 1;
+            if (e.key === 'ArrowLeft' || e.key === 'a') moveDirection.x = -1;
+            if (e.key === 'ArrowRight' || e.key === 'd') moveDirection.x = 1;
+            if (e.key === ' ' || e.key === 'Spacebar') playerJump();
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (['ArrowUp', 'w', 'ArrowDown', 's'].includes(e.key)) moveDirection.z = 0;
+            if (['ArrowLeft', 'a', 'ArrowRight', 'd'].includes(e.key)) moveDirection.x = 0;
+        });
+
+        function getCurrentQuadrant(x, z) {
+            if (x < 0 && z < 0) return 'A';
+            if (x >= 0 && z < 0) return 'B';
+            if (x < 0 && z >= 0) return 'C';
+            if (x >= 0 && z >= 0) return 'D';
+            return 'CENTER';
+        }
+
+        // --- ANIMATION LOOP ---
+        let walkTime = 0;
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            const baseFloorY = FLOOR_HEIGHTS[currentFloor];
+            const speed = 0.22;
+
+            if (isAnswerPhase && playerMesh) {
+                playerPos.x += moveDirection.x * speed;
+                playerPos.z += moveDirection.z * speed;
+
+                playerPos.x = Math.max(-10, Math.min(10, playerPos.x));
+                playerPos.z = Math.max(-10, Math.min(10, playerPos.z));
+
+                playerMesh.position.x = playerPos.x;
+                playerMesh.position.z = playerPos.z;
+
+                if (isJumping) {
+                    playerMesh.position.y += playerVelocityY;
+                    playerVelocityY -= 0.02;
+                    if (playerMesh.position.y <= baseFloorY + 1) {
+                        playerMesh.position.y = baseFloorY + 1;
+                        isJumping = false;
+                    }
+                } else {
+                    playerMesh.position.y = baseFloorY + 1;
+                }
+
+                const isMoving = (moveDirection.x !== 0 || moveDirection.z !== 0);
+                if (isMoving && playerLimbs.armLGroup) {
+                    walkTime += 0.25;
+                    playerLimbs.armLGroup.rotation.x = Math.sin(walkTime) * 0.5;
+                    playerLimbs.armRGroup.rotation.x = -Math.sin(walkTime) * 0.5;
+                    playerLimbs.legLGroup.rotation.x = -Math.sin(walkTime) * 0.5;
+                    playerLimbs.legRGroup.rotation.x = Math.sin(walkTime) * 0.5;
+                }
+            }
+
+            // Camera Following Player
+            if (playerMesh && camera) {
+                const targetCamY = baseFloorY + 22;
+                const targetCamZ = playerMesh.position.z * 0.3 + 26;
+                camera.position.y += (targetCamY - camera.position.y) * 0.08;
+                camera.position.x = playerMesh.position.x * 0.3;
+                camera.position.z = targetCamZ;
+                camera.lookAt(playerMesh.position.x * 0.2, baseFloorY + 2, playerMesh.position.z * 0.2);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- QUIZ GAME LOGIC ---
+        function loadQuestion(idx) {
+            if (idx >= quizQuestions.length) {
+                endGameAndShowPodium();
+                return;
+            }
+
+            currentQuestionIdx = idx;
+            isAnswerPhase = true;
+            timerSeconds = 15;
+
+            const q = quizQuestions[idx];
+
+            for (let f = 1; f <= 4; f++) {
+                Object.keys(towerFloors[f]).forEach(key => {
+                    towerFloors[f][key].position.y = FLOOR_HEIGHTS[f];
+                });
+            }
+
+            playerPos.x = 0; playerPos.z = 0;
+            if (playerMesh) playerMesh.position.set(0, FLOOR_HEIGHTS[currentFloor] + 1, 0);
+
+            document.getElementById('hud-q-progress').innerText = `${idx + 1} / ${quizQuestions.length}`;
+            document.getElementById('hud-floor-text').innerText = `LANTAI ${currentFloor}`;
+            document.getElementById('question-text').innerText = q.q;
+            document.getElementById('opt-A').querySelector('.opt-label').innerText = q.options.A;
+            document.getElementById('opt-B').querySelector('.opt-label').innerText = q.options.B;
+            document.getElementById('opt-C').querySelector('.opt-label').innerText = q.options.C;
+            document.getElementById('opt-D').querySelector('.opt-label').innerText = q.options.D;
+
+            document.getElementById('collapse-alert').classList.add('hidden');
+            document.getElementById('explanation-card').classList.add('hidden');
+
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            const timerBadge = document.getElementById('timer-badge');
+            timerBadge.innerText = timerSeconds;
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                timerBadge.innerText = timerSeconds;
+                
+                if (timerSeconds <= 3 && timerSeconds > 0) {
+                    sound.playTone(600, 'sine', 0.08);
+                }
+
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    triggerFloorResolution();
+                }
+            }, 1000);
+        }
+
+        function triggerFloorResolution() {
+            isAnswerPhase = false;
+            const q = quizQuestions[currentQuestionIdx];
+            const correctKey = q.correct;
+            const playerStandingZone = getCurrentQuadrant(playerPos.x, playerPos.z);
+            const isCorrect = (playerStandingZone === correctKey);
+
+            const alertBox = document.getElementById('collapse-alert');
+            alertBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                sound.playCorrect();
+                sound.playAscend();
+                score += (currentFloor * 100);
+                document.getElementById('hud-score').innerText = `${score} XP`;
+
+                alertBox.innerText = currentFloor < 4 ? "NAIK LANTAI! 🚀" : "PERFECT! 🔥";
+                alertBox.className = "transform transition duration-300 text-3xl sm:text-4xl font-black italic px-8 py-3 rounded-full shadow-2xl border-4 bg-emerald-600 border-yellow-300 text-white animate-bounce";
+
+                const nextFloor = Math.min(4, currentFloor + 1);
+                
+                let startY = playerMesh.position.y;
+                let targetY = FLOOR_HEIGHTS[nextFloor] + 1;
+                let startTime = performance.now();
+
+                function ascendAnim(now) {
+                    let elapsed = (now - startTime) / 600;
+                    if (elapsed < 1) {
+                        playerMesh.position.y = startY + (targetY - startY) * elapsed + Math.sin(elapsed * Math.PI) * 4;
+                        requestAnimationFrame(ascendAnim);
+                    } else {
+                        currentFloor = nextFloor;
+                        playerMesh.position.y = targetY;
+                        document.getElementById('hud-floor-text').innerText = `LANTAI ${currentFloor}`;
+                        confetti({ particleCount: 40, spread: 50, origin: { y: 0.6 } });
+                        showExplanation(correctKey);
+                    }
+                }
+                requestAnimationFrame(ascendAnim);
+
+            } else {
+                sound.playFall();
+                alertBox.innerText = "RUNTUH! 💥 JATUH KE LANTAI 1";
+                alertBox.className = "transform transition duration-300 text-3xl sm:text-4xl font-black italic px-8 py-3 rounded-full shadow-2xl border-4 bg-red-600 border-yellow-400 text-white animate-pulse";
+
+                let startTime = performance.now();
+                function dropAnim(now) {
+                    let elapsed = (now - startTime) / 1000;
+                    Object.keys(towerFloors[currentFloor]).forEach(key => {
+                        if (key !== correctKey) {
+                            towerFloors[currentFloor][key].position.y -= elapsed * 1.5;
+                        }
+                    });
+
+                    if (playerMesh.position.y > FLOOR_HEIGHTS[1] + 1) {
+                        playerMesh.position.y -= elapsed * 15;
+                    }
+
+                    if (elapsed < 1.0) {
+                        requestAnimationFrame(dropAnim);
+                    } else {
+                        currentFloor = 1;
+                        playerMesh.position.y = FLOOR_HEIGHTS[1] + 1;
+                        document.getElementById('hud-floor-text').innerText = `LANTAI 1`;
+                        showExplanation(correctKey);
+                    }
+                }
+                requestAnimationFrame(dropAnim);
+            }
+        }
+
+        function showExplanation(correctKey) {
+            document.getElementById('correct-choice-letter').innerText = `${correctKey}: ${quizQuestions[currentQuestionIdx].options[correctKey]}`;
+            document.getElementById('explanation-text').innerText = quizQuestions[currentQuestionIdx].exp;
+            document.getElementById('explanation-card').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            loadQuestion(currentQuestionIdx + 1);
+        }
+
+        // --- TEACHER DISPLAY UPDATE ---
+        function teacherStartQuizTimer() {
+            if (isTeacher) {
+                loadQuestion(currentQuestionIdx);
+            }
+        }
+
+        function updateTeacherUI() {
+            const q = quizQuestions[currentQuestionIdx];
+            document.getElementById('teacher-q-num').innerText = `Soal ${currentQuestionIdx + 1} / ${quizQuestions.length}`;
+            document.getElementById('teacher-q-text').innerText = q.q;
+            document.getElementById('teacher-correct-key').innerText = `${q.correct} (${q.options[q.correct]})`;
+
+            let optsHtml = '';
+            Object.keys(q.options).forEach(k => {
+                optsHtml += `<div class="${k === q.correct ? 'text-emerald-400 font-bold' : 'text-slate-400'}">
+                    ${k}. ${q.options[k]}
+                </div>`;
+            });
+            document.getElementById('teacher-options').innerHTML = optsHtml;
+
+            updateTeacherLeaderboard();
+        }
+
+        function updateTeacherLeaderboard() {
+            const tbody = document.getElementById('teacher-leaderboard-body');
+            const countElem = document.getElementById('connected-count');
+            if (!tbody) return;
+
+            const studentsList = Object.values(connectedStudentsMap);
+            if (countElem) countElem.innerText = studentsList.length;
+
+            if (studentsList.length === 0) {
+                tbody.innerHTML = `<tr>
+                    <td colspan="4" class="py-8 text-center text-slate-500 font-medium">
+                        Belum ada murid yang masuk. Minta murid memasukkan kode di HP mereka.
+                    </td>
+                </tr>`;
+                return;
+            }
+
+            const sorted = [...studentsList].sort((a, b) => (b.currentFloor * 1000 + b.score) - (a.currentFloor * 1000 + a.score));
+
+            let html = '';
+            sorted.forEach((p, idx) => {
+                html += `
+                <tr class="hover:bg-slate-800/50 transition">
+                    <td class="py-3 font-black text-amber-400">#${idx + 1}</td>
+                    <td class="py-3 font-bold text-slate-200">${p.name}</td>
+                    <td class="py-3">
+                        <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-900 text-amber-300 border border-indigo-700">
+                            Lantai ${p.currentFloor}
+                        </span>
+                    </td>
+                    <td class="py-3 text-emerald-400 font-black">${p.score} XP</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // --- WINNER PODIUM ---
+        function endGameAndShowPodium() {
+            document.getElementById('game-hud').classList.add('hidden');
+            document.getElementById('screen-podium').classList.remove('hidden');
+
+            const studentsList = Object.values(connectedStudentsMap);
+            if (studentsList.length === 0) {
+                studentsList.push({ name: playerName, score: score, currentFloor: currentFloor });
+            }
+
+            const sorted = [...studentsList].sort((a, b) => b.score - a.score);
+
+            document.getElementById('podium-1-name').innerText = sorted[0] ? sorted[0].name : playerName;
+            document.getElementById('podium-2-name').innerText = sorted[1] ? sorted[1].name : "-";
+            document.getElementById('podium-3-name').innerText = sorted[2] ? sorted[2].name : "-";
+
+            document.getElementById('podium-my-score').innerText = `${score} XP`;
+            document.getElementById('podium-my-floor').innerText = `Lantai ${currentFloor}`;
+
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+        }
+    </script>
+</body>
+</html>
